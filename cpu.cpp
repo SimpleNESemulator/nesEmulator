@@ -13,7 +13,7 @@ void BIT(){};
 void BMI(){};
 void BNE(){};
 void BPL(){};
-void BRK(){};
+void BRK(){std::cout<<"hello"<<std::endl;};
 void BVC(){};
 void BVS(){};
 void CLC(){};
@@ -81,23 +81,24 @@ void SHX(){};
 void LAS(){};
 void AXS(){};
 
-long instrPtr[256] = {
-    (long)&BRK,(long)&ORA,(long)&KIL,(long)&SLO,(long)&NOP,(long)&ORA,(long)&ASL,(long)&SLO,(long)&PHP,(long)&ORA,(long)&ASL,(long)&ANC,(long)&NOP,(long)&ORA,(long)&ASL,(long)&SLO,
-    (long)&BPL,(long)&ORA,(long)&KIL,(long)&SLO,(long)&NOP,(long)&ORA,(long)&ASL,(long)&SLO,(long)&CLC,(long)&ORA,(long)&NOP,(long)&SLO,(long)&NOP,(long)&ORA,(long)&ASL,(long)&SLO,
-    (long)&JSR,(long)&AND,(long)&KIL,(long)&RLA,(long)&BIT,(long)&AND,(long)&ROL,(long)&RLA,(long)&PLP,(long)&AND,(long)&ROL,(long)&ANC,(long)&BIT,(long)&AND,(long)&ROL,(long)&RLA,
-    (long)&BMI,(long)&AND,(long)&KIL,(long)&RLA,(long)&NOP,(long)&AND,(long)&ROL,(long)&RLA,(long)&SEC,(long)&AND,(long)&NOP,(long)&RLA,(long)&NOP,(long)&AND,(long)&ROL,(long)&RLA,
-    (long)&RTI,(long)&EOR,(long)&KIL,(long)&SRE,(long)&NOP,(long)&EOR,(long)&LSR,(long)&SRE,(long)&PHA,(long)&EOR,(long)&LSR,(long)&ALR,(long)&JMP,(long)&EOR,(long)&LSR,(long)&SRE,
-    (long)&BVC,(long)&EOR,(long)&KIL,(long)&SRE,(long)&NOP,(long)&EOR,(long)&LSR,(long)&SRE,(long)&CLI,(long)&EOR,(long)&NOP,(long)&SRE,(long)&NOP,(long)&EOR,(long)&LSR,(long)&SRE,
-    (long)&RTS,(long)&ADC,(long)&KIL,(long)&RRA,(long)&NOP,(long)&ADC,(long)&ROR,(long)&RRA,(long)&PLA,(long)&ADC,(long)&ROR,(long)&ARR,(long)&JMP,(long)&ADC,(long)&ROR,(long)&RRA,
-    (long)&BVS,(long)&ADC,(long)&KIL,(long)&RRA,(long)&NOP,(long)&ADC,(long)&ROR,(long)&RRA,(long)&SEI,(long)&ADC,(long)&NOP,(long)&RRA,(long)&NOP,(long)&ADC,(long)&ROR,(long)&RRA,
-    (long)&NOP,(long)&STA,(long)&NOP,(long)&SAX,(long)&STY,(long)&STA,(long)&STX,(long)&SAX,(long)&DEY,(long)&NOP,(long)&TXA,(long)&XAA,(long)&STY,(long)&STA,(long)&STX,(long)&SAX,
-    (long)&BCC,(long)&STA,(long)&KIL,(long)&AHX,(long)&STY,(long)&STA,(long)&STX,(long)&SAX,(long)&TYA,(long)&STA,(long)&TXS,(long)&TAS,(long)&SHY,(long)&STA,(long)&SHX,(long)&AHX,
-    (long)&LDY,(long)&LDA,(long)&LDX,(long)&LAX,(long)&LDY,(long)&LDA,(long)&LDX,(long)&LAX,(long)&TAY,(long)&LDA,(long)&TAX,(long)&LAX,(long)&LDY,(long)&LDA,(long)&LDX,(long)&LAX,
-    (long)&BCS,(long)&LDA,(long)&KIL,(long)&LAX,(long)&LDY,(long)&LDA,(long)&LDX,(long)&LAX,(long)&CLV,(long)&LDA,(long)&TSX,(long)&LAS,(long)&LDY,(long)&LDA,(long)&LDX,(long)&LAX,
-    (long)&CPY,(long)&CMP,(long)&NOP,(long)&DCP,(long)&CPY,(long)&CMP,(long)&DEC,(long)&DCP,(long)&INY,(long)&CMP,(long)&DEX,(long)&AXS,(long)&CPY,(long)&CMP,(long)&DEC,(long)&DCP,
-    (long)&BNE,(long)&CMP,(long)&KIL,(long)&DCP,(long)&NOP,(long)&CMP,(long)&DEC,(long)&DCP,(long)&CLD,(long)&CMP,(long)&NOP,(long)&DCP,(long)&NOP,(long)&CMP,(long)&DEC,(long)&DCP,
-    (long)&CPX,(long)&SBC,(long)&NOP,(long)&ISC,(long)&CPX,(long)&SBC,(long)&INC,(long)&ISC,(long)&INX,(long)&SBC,(long)&NOP,(long)&SBC,(long)&CPX,(long)&SBC,(long)&INC,(long)&ISC,
-    (long)&BEQ,(long)&SBC,(long)&KIL,(long)&ISC,(long)&NOP,(long)&SBC,(long)&INC,(long)&ISC,(long)&SED,(long)&SBC,(long)&NOP,(long)&ISC,(long)&NOP,(long)&SBC,(long)&INC,(long)&ISC,
+//instruction funciton pointer array
+void* instrPtr[256] = {
+    (void*)&BRK,(void*)&ORA,(void*)&KIL,(void*)&SLO,(void*)&NOP,(void*)&ORA,(void*)&ASL,(void*)&SLO,(void*)&PHP,(void*)&ORA,(void*)&ASL,(void*)&ANC,(void*)&NOP,(void*)&ORA,(void*)&ASL,(void*)&SLO,
+    (void*)&BPL,(void*)&ORA,(void*)&KIL,(void*)&SLO,(void*)&NOP,(void*)&ORA,(void*)&ASL,(void*)&SLO,(void*)&CLC,(void*)&ORA,(void*)&NOP,(void*)&SLO,(void*)&NOP,(void*)&ORA,(void*)&ASL,(void*)&SLO,
+    (void*)&JSR,(void*)&AND,(void*)&KIL,(void*)&RLA,(void*)&BIT,(void*)&AND,(void*)&ROL,(void*)&RLA,(void*)&PLP,(void*)&AND,(void*)&ROL,(void*)&ANC,(void*)&BIT,(void*)&AND,(void*)&ROL,(void*)&RLA,
+    (void*)&BMI,(void*)&AND,(void*)&KIL,(void*)&RLA,(void*)&NOP,(void*)&AND,(void*)&ROL,(void*)&RLA,(void*)&SEC,(void*)&AND,(void*)&NOP,(void*)&RLA,(void*)&NOP,(void*)&AND,(void*)&ROL,(void*)&RLA,
+    (void*)&RTI,(void*)&EOR,(void*)&KIL,(void*)&SRE,(void*)&NOP,(void*)&EOR,(void*)&LSR,(void*)&SRE,(void*)&PHA,(void*)&EOR,(void*)&LSR,(void*)&ALR,(void*)&JMP,(void*)&EOR,(void*)&LSR,(void*)&SRE,
+    (void*)&BVC,(void*)&EOR,(void*)&KIL,(void*)&SRE,(void*)&NOP,(void*)&EOR,(void*)&LSR,(void*)&SRE,(void*)&CLI,(void*)&EOR,(void*)&NOP,(void*)&SRE,(void*)&NOP,(void*)&EOR,(void*)&LSR,(void*)&SRE,
+    (void*)&RTS,(void*)&ADC,(void*)&KIL,(void*)&RRA,(void*)&NOP,(void*)&ADC,(void*)&ROR,(void*)&RRA,(void*)&PLA,(void*)&ADC,(void*)&ROR,(void*)&ARR,(void*)&JMP,(void*)&ADC,(void*)&ROR,(void*)&RRA,
+    (void*)&BVS,(void*)&ADC,(void*)&KIL,(void*)&RRA,(void*)&NOP,(void*)&ADC,(void*)&ROR,(void*)&RRA,(void*)&SEI,(void*)&ADC,(void*)&NOP,(void*)&RRA,(void*)&NOP,(void*)&ADC,(void*)&ROR,(void*)&RRA,
+    (void*)&NOP,(void*)&STA,(void*)&NOP,(void*)&SAX,(void*)&STY,(void*)&STA,(void*)&STX,(void*)&SAX,(void*)&DEY,(void*)&NOP,(void*)&TXA,(void*)&XAA,(void*)&STY,(void*)&STA,(void*)&STX,(void*)&SAX,
+    (void*)&BCC,(void*)&STA,(void*)&KIL,(void*)&AHX,(void*)&STY,(void*)&STA,(void*)&STX,(void*)&SAX,(void*)&TYA,(void*)&STA,(void*)&TXS,(void*)&TAS,(void*)&SHY,(void*)&STA,(void*)&SHX,(void*)&AHX,
+    (void*)&LDY,(void*)&LDA,(void*)&LDX,(void*)&LAX,(void*)&LDY,(void*)&LDA,(void*)&LDX,(void*)&LAX,(void*)&TAY,(void*)&LDA,(void*)&TAX,(void*)&LAX,(void*)&LDY,(void*)&LDA,(void*)&LDX,(void*)&LAX,
+    (void*)&BCS,(void*)&LDA,(void*)&KIL,(void*)&LAX,(void*)&LDY,(void*)&LDA,(void*)&LDX,(void*)&LAX,(void*)&CLV,(void*)&LDA,(void*)&TSX,(void*)&LAS,(void*)&LDY,(void*)&LDA,(void*)&LDX,(void*)&LAX,
+    (void*)&CPY,(void*)&CMP,(void*)&NOP,(void*)&DCP,(void*)&CPY,(void*)&CMP,(void*)&DEC,(void*)&DCP,(void*)&INY,(void*)&CMP,(void*)&DEX,(void*)&AXS,(void*)&CPY,(void*)&CMP,(void*)&DEC,(void*)&DCP,
+    (void*)&BNE,(void*)&CMP,(void*)&KIL,(void*)&DCP,(void*)&NOP,(void*)&CMP,(void*)&DEC,(void*)&DCP,(void*)&CLD,(void*)&CMP,(void*)&NOP,(void*)&DCP,(void*)&NOP,(void*)&CMP,(void*)&DEC,(void*)&DCP,
+    (void*)&CPX,(void*)&SBC,(void*)&NOP,(void*)&ISC,(void*)&CPX,(void*)&SBC,(void*)&INC,(void*)&ISC,(void*)&INX,(void*)&SBC,(void*)&NOP,(void*)&SBC,(void*)&CPX,(void*)&SBC,(void*)&INC,(void*)&ISC,
+    (void*)&BEQ,(void*)&SBC,(void*)&KIL,(void*)&ISC,(void*)&NOP,(void*)&SBC,(void*)&INC,(void*)&ISC,(void*)&SED,(void*)&SBC,(void*)&NOP,(void*)&ISC,(void*)&NOP,(void*)&SBC,(void*)&INC,(void*)&ISC,
 };
 
 //instruction opcode array
@@ -201,11 +202,18 @@ int instrSize[256] = {
 
 
 void fetch(){
-    cpu.ip = cpu.pc;
-    cpu.pc += instrSize[memRead(cpu.ip)];
+    cpu.ip = cpu.pc; //instruction pointer points current instruction
+    cpu.opcode = memRead(cpu.ip);
+    cpu.pc += instrSize[cpu.opcode]; //program counter points next instruction
 }
-
-/* execution using function pointer
-typedef void execute();
-execute *e = (execute*)(long)instrPtr[1];
-*/
+void decode(){
+    cpu.addressingMode = instrMode[cpu.opcode]; //addressing mode
+    cpu.operand1 = memRead(memRead(cpu.ip+1)); //operand 1 fetch
+    cpu.operand2 = memRead(memRead(cpu.ip+2)); //operand 2 fetch
+}
+void execute(uint8_t opcode){
+    //execute the instruction with a function pointer
+    typedef void exec();
+    exec *e = (exec*)(void*)instrPtr[opcode];
+    e();
+}

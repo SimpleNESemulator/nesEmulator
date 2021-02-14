@@ -5,5 +5,5 @@
 using namespace std;
 
 int main(){
-    
+    execute(0x00);
 }

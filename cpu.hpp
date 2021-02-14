@@ -36,8 +36,9 @@ struct cpuStruct{
 
     uint16_t ip; //instruction pointer
     uint8_t addressingMode; //addressing mode
-    uint8_t opcode1; //first opcode
-    uint8_t opcode2; //second opcode
+    uint8_t opcode; //instruction opcode 
+    uint8_t operand1; //first operand
+    uint8_t operand2; //second operand
 };
 
 //Instructions
@@ -128,5 +129,7 @@ void push(uint8_t);
 uint8_t pull();
 
 void fetch();
+void decode();
+void execute(uint8_t);
 
 #endif
