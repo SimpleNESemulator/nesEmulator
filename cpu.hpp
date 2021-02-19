@@ -12,18 +12,18 @@ enum modes{
     abl, //ABsoLute
     abx, //ABsolute,X
     aby, //ABsolute,Y
+    ind, //INDirect
     inx, //INdirect,X
     iny, //INdirect,Y
     rel, //RELative
     imp, //IMPlied
     acc, //ACCumulator
-    ind, //INDirect
-    ixt, //IndeXed indirecT
-    itx, //IndirecT indeXed
+    //ixt, //IndeXed indirecT
+    //itx, //IndirecT indeXed
 };
 
 enum {
-    
+
 };
 
 struct cpuStruct{
@@ -32,13 +32,19 @@ struct cpuStruct{
     uint8_t x,y; //x and y register
     uint8_t sp; //stack pointer
 
-    uint8_t NVUBDIZC; //NVUBDIZC flag
+    bool N,V,U,B,D,I,Z,C; //NVUBDIZC flag
 
-    uint16_t ip; //instruction pointer
+    uint8_t ip; //instruction pointer
     uint8_t addressingMode; //addressing mode
-    uint8_t opcode; //instruction opcode 
+    uint8_t opcode; //instruction opcode
+
     uint8_t operand1; //first operand
     uint8_t operand2; //second operand
+    long cycle; //current cpu cycle
+
+    uint16_t targetAddress; //target address for indirect modes
+    bool branchFlag; //branch flag
+    bool pageBoundaryFlag; //page boundary crossed
 };
 
 //Instructions
@@ -121,15 +127,18 @@ void LAS();
 void AXS();
 
 //helper functions
-//flag modify
-void setFlag(uint8_t);
+//flag 
+uint8_t getFlag();
 
 //stack operations
 void push(uint8_t);
 uint8_t pull();
 
+//cpu operations
 void fetch();
 void decode();
 void execute(uint8_t);
+
+void cycleAdder();
 
 #endif
