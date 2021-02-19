@@ -7,8 +7,22 @@
 typedef void (*instr_ptr) ();
 cpuStruct cpu;
 
-void ADC(){};
-void AND(){};
+void ADC(){
+    uint add = cpu.ac + cpu.operand1 + cpu.C;
+    bool carryGenerate = (cpu.ac>>7)&(cpu.operand1>>7); //test carry generation
+    bool carryPropagate = (cpu.ac>>7)^(cpu.operand1>>7); //test carry propagation
+
+    cpu.ac = (add & 0xFF);
+
+    //set flag bits
+    cpu.C = (carryGenerate || (carryPropagate && cpu.C));
+    cpu.V = (carryGenerate != (add & 0x80)>>7);
+    cpu.Z = ((add & 0xFF) == 0x00);
+    cpu.N = (add & 0x80)>>7;
+}
+void AND(){
+
+}
 void ASL(){};
 void BCC(){};
 void BCS(){};
@@ -17,7 +31,7 @@ void BIT(){};
 void BMI(){};
 void BNE(){};
 void BPL(){};
-void BRK(){std::cout<<"hello"<<std::endl;};
+void BRK(){}
 void BVC(){};
 void BVS(){};
 void CLC(){};
@@ -187,7 +201,6 @@ int instrPageCyc[256] = {
     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
     1,1,0,0,0,0,0,0,0,1,0,0,1,1,0,0,
 };
-
 int instrSize[256] = {
     1,2,1,2,2,2,2,2,1,2,1,2,3,3,3,3,
     2,2,1,2,2,2,2,2,1,3,1,3,3,3,3,3,
@@ -206,20 +219,111 @@ int instrSize[256] = {
     2,2,2,2,2,2,2,2,1,2,1,2,3,3,3,3,
     2,2,1,2,2,2,2,2,1,3,1,3,3,3,3,3,
 };
-
-
-void fetch(){
+uint8_t getFlag(){
+    uint8_t flag = ((cpu.N<<7)|(cpu.V<<6)|(cpu.U<<5)|(cpu.B<<4)|(cpu.D<<3)|(cpu.I<<2)|(cpu.Z<<1)|(cpu.C<<0));
+    return flag;
+}
+void cycleAdder(){
+    cpu.cycle += instrCyc[cpu.opcode];
+    //add cycles if branch taken
+    if(cpu.branchFlag){
+        cpu.cycle += 1;
+    }
+    //add cycles if page boundary crossed
+    if(cpu.pageBoundaryFlag){
+        cpu.cycle += instrPageCyc[cpu.opcode];
+    }
+    cpu.pageBoundaryFlag = false;
+    cpu.branchFlag = false;
+}
+void fetchInstr(){
     cpu.ip = cpu.pc; //instruction pointer points current instruction
     cpu.opcode = memRead(cpu.ip);
     cpu.pc += instrSize[cpu.opcode]; //program counter points next instruction
 }
 void decode(){
     cpu.addressingMode = instrMode[cpu.opcode]; //addressing mode
-    cpu.operand1 = memRead(memRead(cpu.ip+1)); //operand 1 fetch
-    cpu.operand2 = memRead(memRead(cpu.ip+2)); //operand 2 fetch
+    //read the next two bytes after the instruction
+    uint8_t secondByte = memRead(cpu.ip+1);
+    uint8_t thirdByte = memRead(cpu.ip+2);
+    uint8_t lowByte, highByte;
+    uint8_t lowPointer,highPointer;
+    switch(cpu.addressingMode){
+        case imm:
+        {
+            cpu.operand1 = secondByte;
+            break;
+        }
+        case zpg:
+        {
+            cpu.operand1 = memRead(0x00FF&secondByte);
+            break;
+        }
+        case zpx:
+        {
+            cpu.operand1 = memRead(0x00FF&(secondByte+cpu.x));
+            break;
+        }
+        case zpy:
+        {
+            cpu.operand1 = memRead(0x00FF&(secondByte+cpu.y));
+            break;
+        }
+        case abl:
+        {
+            lowByte = secondByte;
+            highByte = thirdByte;
+            cpu.operand1 = memRead((highByte<<4)|lowByte);
+            break;
+        }
+        case abx:
+        {
+            lowByte = secondByte;
+            highByte = thirdByte;
+            cpu.operand1 = memRead(((highByte<<4)|lowByte)+cpu.x);
+            break;
+        }
+        case aby:
+        {
+            lowByte = secondByte;
+            highByte = thirdByte;
+            cpu.operand1 = memRead(((highByte<<4)|lowByte)+cpu.y);
+            break;
+        }
+        case ind:
+        {
+            lowByte = secondByte;
+            highByte = thirdByte;
+            lowPointer = memRead((highByte<<4)|lowByte);
+            highPointer = memRead((highByte<<4)|((lowByte+1)%0x100));
+            cpu.targetAddress = (highPointer<<4)|lowPointer; //16 bits, address
+            break;
+        }
+        case inx:
+        {
+            uint8_t zeroPageOffset = (secondByte+cpu.x)%0x100;
+            lowPointer = memRead(0x00FF&zeroPageOffset);
+            highPointer = memRead(0x00FF&((zeroPageOffset+1)%0x100));
+            cpu.targetAddress = (highPointer<<4)|lowPointer; //16 bits, address
+            break;
+        }
+        case iny:
+        {
+            lowPointer = memRead(0x00FF&secondByte);
+            highPointer = memRead(0x00FF&((secondByte+1)%0x100));
+            cpu.targetAddress = ((highPointer<<4)|lowPointer)+cpu.y;
+            break;
+        }
+        case rel:
+        {
+            int8_t offset = secondByte;
+            cpu.targetAddress = cpu.pc+offset;
+            break;
+        }
+    }
 }
 void execute(uint8_t opcode){
     instr_ptr instr = instrPtr[opcode];
     instr();
-    
+    cycleAdder();
 }
