@@ -44,7 +44,7 @@ typedef struct instruction {
 
 class cpu {
     public:
-    uint16_t pc;  // program counter
+    uint16_t pc;    // program counter
     uint8_t ac;     // accumulator
     uint8_t x,y;    // x and y register
     uint8_t sp;     //stack pointer
@@ -75,9 +75,7 @@ class cpu {
     void decode();
     void execute();
     void clock();
-
-    void cycleAdder();
-
+    
     // instructions
     void ADC(); void AND(); void ASL(); void BCC(); 
     void BCS(); void BEQ(); void BIT(); void BMI(); 
