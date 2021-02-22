@@ -1,6 +1,6 @@
 # Editor
 .vscode/
-.ipynb_checkpoints/
+*.ipynb_checkpoints/
 
 # Prerequisites
 *.d
