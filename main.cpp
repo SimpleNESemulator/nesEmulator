@@ -1,28 +1,29 @@
 #include <iostream>
-#include "mainMemory.hpp"
+#include <bitset>
+
 #include "cpu.hpp"
+#include "mainMemory.hpp"
 
 using namespace std;
 
 int main(){
     cpu c{};
-    c.pc = 0;
     uint8_t program[] = {
-        0x69, 0xFE, // add 254
-        0x69, 0x0C // add 12 should print 10
+        0x69, 0xF0, // add 240
+        0x69, 0x1F, // add 31
+        0x90, 0xFD, // go back by 3 add 31 again
     };
-    for (size_t i = 0; i < 4; i++)
+    for (uint16_t i = 0; i < 6; i++)
         memWrite(i, program[i]);
 
-    c.fetch();
-    c.decode();
-    c.execute();
+    for (size_t i = 0; i < 20; i++){
+        c.status &= 0;
+        c.fetch();
+        c.decode();
+        c.execute();
 
-    c.fetch();
-    c.decode();
-    c.execute();
+        cout << "A: " << (int) c.ac << "\tstatus:\t" << bitset<8>(c.status) << endl;
+    }
 
-
-    cout << (int) c.ac << endl;
     return 0;
 }

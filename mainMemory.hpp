@@ -1,5 +1,5 @@
-#ifndef MAIN_MEMORY
-#define MAIN_MEMORY
+#ifndef MAIN_MEMORY_H
+#define MAIN_MEMORY_H
 #include <iostream>
 
 // memory operations

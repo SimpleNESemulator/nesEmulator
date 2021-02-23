@@ -1,19 +1,15 @@
 #include "cpu.hpp"
-#include "mainMemory.hpp"
-
 
 void cpu::ADC(){
-    // affected flags
-    // N	Z	C	I	D	V
-    // +	+	+	-	-	+
-    
+    // Affects Flags: N V Z C
     // A + M + C -> A, C
+
     uint res = ac + *operand + (status & C);
     bool carryOut = (res & 0x100);
     ac = res & 0xFF;
 
     // N - set bit 7 to the results bit 7 (0 indexed)
-    status |= ac & 0x80;
+    status |= (ac & 0x80);
 
     // Z - set if result is zero
     // if res == 0 -> !(res ^ 0) << 1 == 0b00000010
@@ -27,10 +23,46 @@ void cpu::ADC(){
     status |= carryOut;
 }
 void cpu::AND(){
+    // Affects Flags: N Z
+    // A AND M -> A
 
+    ac &= *operand;
+
+    // Z
+    status |= (!(ac ^ 0) << 1);
+    // N
+    status |= ac & 0x80;
 }
-void cpu::ASL(){};
-void cpu::BCC(){};
+void cpu::ASL(){
+    // Affects Flags: N Z C 
+    // C <- [76543210] <- 0
+
+    bool carryOut = *operand & 0x80;
+    *operand <<= 1;
+
+    // N
+    status |= *operand & 0x80;
+    // Z
+    status |= (!(*operand ^ 0) << 1);
+    // C
+    status |= carryOut;
+};
+void cpu::BCC(){
+    // Branch on carry clear, C == 0
+    pc--;
+    // if status bit-0 isn't set
+    if (!(status & C)){
+        // branch taken adds one more cycle
+        cycles++;
+        // we cast operand's value to int8_t because
+        // branching instructions interpret it as signed.
+        uint16_t temp = pc + static_cast<int8_t>(*operand);
+        pc = temp;
+
+        if (!((pc & 0xFF00) ^ (temp & 0xFF00)))
+            cycles++; // add one more cycle if the page boundary is crossed
+    }
+};
 void cpu::BCS(){};
 void cpu::BEQ(){};
 void cpu::BIT(){};
@@ -174,7 +206,6 @@ instruction instructions[] = {
 
 uint8_t cpu::fetch(){
     // just fetch the current address
-    // we also return that byte so that we can use it in decode
     fetched = memRead(pc++); 
     return fetched;
 }
