@@ -7,6 +7,7 @@
 using namespace std;
 
 int main(){
+<<<<<<< HEAD
     cpu c{};
     uint8_t program[] = {
         0x69, 0xF0, // add 240
@@ -26,4 +27,7 @@ int main(){
     }
 
     return 0;
+=======
+    execute(0x00);
+>>>>>>> c74e091043b362ffa76f5dfa9d03816fb88a3967
 }
