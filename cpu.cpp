@@ -49,9 +49,11 @@ void cpu::ASL(){
 };
 void cpu::BCC(){
     // Branch on carry clear, C == 0
-    pc--;
+
     // if status bit-0 isn't set
     if (!(status & C)){
+        //since pc points to the next instruction we back up by one
+        pc--;
         // branch taken adds one more cycle
         cycles++;
         // we cast operand's value to int8_t because
@@ -137,6 +139,15 @@ void cpu::SHX(){};
 void cpu::LAS(){};
 void cpu::AXS(){};
 
+
+/*
+    instruction is a struct that contains:
+    instr_ptr instr -> pointer to a member function of the cpu class (cpu::*ptr)
+    addressingMode addressing -> enum for different addressing modes
+    uint8_t size -> byte size of the instruction
+    uint8_t cycles -> amount of cycles the instruction takes the complete
+    uint8_t pageCycles -> amount of extra cycles to be added if the page boundary of the address is crossed
+*/
 instruction instructions[] = {
 	{&cpu::BRK,IMPL,1,7,0},	{&cpu::ORA,XIND,2,6,0},	{&cpu::KIL,XXX,1,2,0},	{&cpu::SLO,XXX,2,8,0},
 	{&cpu::NOP,XXX,2,3,0},	{&cpu::ORA,ZPG,2,3,0},	{&cpu::ASL,ZPG,2,5,0},	{&cpu::SLO,XXX,2,5,0},
