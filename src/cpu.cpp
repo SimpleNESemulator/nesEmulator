@@ -51,34 +51,112 @@ void cpu::BCC(){
     // Branch on carry clear, C == 0
 
     // if status bit-0 isn't set
-    if (!(status & C)){
-        //since pc points to the next instruction we back up by one
-        pc--;
-        // branch taken adds one more cycle
-        cycles++;
-        // we cast operand's value to int8_t because
-        // branching instructions interpret it as signed.
-        uint16_t temp = pc + static_cast<int8_t>(*operand);
-        pc = temp;
-
-        if (!((pc & 0xFF00) ^ (temp & 0xFF00)))
-            cycles++; // add one more cycle if the page boundary is crossed
-    }
+    if (!(status & C))
+        branch();
 };
-void cpu::BCS(){};
-void cpu::BEQ(){};
-void cpu::BIT(){};
-void cpu::BMI(){};
-void cpu::BNE(){};
-void cpu::BPL(){};
-void cpu::BRK(){};
-void cpu::BVC(){};
-void cpu::BVS(){};
-void cpu::CLC(){};
-void cpu::CLD(){};
-void cpu::CLI(){};
-void cpu::CLV(){}
-void cpu::CMP(){};
+void cpu::BCS(){
+    // Branch on carry set, C == 1
+
+    // if status bit-0 is set
+    if (status & C)
+       branch();
+};
+void cpu::BEQ(){
+    // Branch on result zero, Z == 1
+
+    // if status bit-1 is set
+    if (status & Z)
+        branch();
+};
+void cpu::BIT(){
+    // bits 7 and 6 of operand are transfered to bits
+    // 7 and 6 of status [N, V]
+    // the Z flag is set to the result of operand AND accumulator
+    // Affects Flags: N V Z 
+
+    // mask status with 0011 1111 to clear bits 6 and 7
+    status &= ~0xC0;
+    // set bits 6 and 7 to operand's 6 and 7
+    status |= *operand & 0xC0;
+
+    // notice it's && not &
+    status |= (*operand && ac) << 1;
+};
+void cpu::BMI(){
+    // Branch on result minus, N == 1
+
+    if (status & N)
+        branch();
+};
+void cpu::BNE(){
+    // Branch on result not zero, Z == 0
+
+    if (!(status & Z))
+        branch();
+};
+void cpu::BPL(){
+    // Branch on result plus, N == 0
+
+    if(!(status & N))
+        branch();
+};
+void cpu::BRK(){
+    // Force Break, interrupt
+    // push PC+2, push SR
+
+    // pc is already looking ahead
+    // in cpu::fetch() {fetched = memRead(pc++);}
+    pc++;
+
+    // store PC(hi)
+    push((pc & 0xFF00) >> 8);
+
+    // store PC(lo)
+    push(pc & 0x00FF);
+    
+
+    // not sure if we need to store the status
+    // register with the interrupt flag set or
+    // a copy of it where it's set but on the original
+    // it's not
+
+    //set interrupt flag
+    status |= I;
+    // store status register
+    push(status);
+};
+void cpu::BVC(){
+    // Branch on overflow clear, V == 0
+
+    if (!(status & V))
+        branch();
+};
+void cpu::BVS(){
+    // Branch on overflow set, V == 1
+
+    if (status & V)
+        branch();
+};
+void cpu::CLC(){
+    // Clear carry bit
+    status &= ~C;
+};
+void cpu::CLD(){
+    // Clear decimal bit
+    status &= ~D;
+};
+void cpu::CLI(){
+    // Clear interrupt disable bit
+    status &= ~I;
+};
+void cpu::CLV(){
+    // Clear overflow bit
+    status &= ~V;
+}
+void cpu::CMP(){
+    // Compare memory with accumulator
+    // Affects Flags: N Z C 
+};
 void cpu::CPX(){};
 void cpu::CPY(){};
 void cpu::DEC(){};
@@ -139,6 +217,19 @@ void cpu::SHX(){};
 void cpu::LAS(){};
 void cpu::AXS(){};
 
+void cpu::branch(){
+    //since pc points to the next instruction we back up by one
+    pc--;
+    // branch taken adds one more cycle
+    cycles++;
+    // we cast operand's value to int8_t because
+    // branching instructions interpret it as signed.
+    uint16_t temp = pc + static_cast<int8_t>(*operand);
+    pc = temp;
+
+    if (!((pc & 0xFF00) ^ (temp & 0xFF00)))
+        cycles++; // add one more cycle if the page boundary is crossed
+}
 
 /*
     instruction is a struct that contains:
@@ -214,6 +305,24 @@ instruction instructions[] = {
 	{&cpu::SED,IMPL,1,2,0},	{&cpu::SBC,ABSY,3,4,1},	{&cpu::NOP,XXX,1,2,0},	{&cpu::ISC,XXX,3,7,0},
 	{&cpu::NOP,XXX,3,4,1},	{&cpu::SBC,ABSX,3,4,1},	{&cpu::INC,ABSX,3,7,0},	{&cpu::ISC,XXX,3,7,0},
 };
+
+// stack operations
+// 6502 uses the second page in memory for stack
+// 0x1FF to 0x100 (it is iterated in reverse)
+
+uint8_t cpu::pull(){
+    // if it's out of bounds, wrap it around
+    sp++;
+    if (sp > 0x1FF)
+        sp = 0x100 | (0xFF & sp);
+    return memRead(sp);
+}
+
+void cpu::push(uint8_t n){
+    if (sp < 0x100)
+        sp = 0x100 | (0xFF & sp);
+    memWrite(sp--, n);
+}
 
 uint8_t cpu::fetch(){
     // just fetch the current address
@@ -299,7 +408,7 @@ void cpu::decode(){
         case IMPL:
             // operand is implied
             // every instruction that uses implied is 1-byte in size
-            // 
+            // except BRK Force Break
             break;
         case REL:
             // branch target is PC + signed offset BB

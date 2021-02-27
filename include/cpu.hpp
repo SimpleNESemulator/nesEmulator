@@ -49,7 +49,7 @@ class cpu {
         uint16_t pc{0};    // program counter
         uint8_t ac;         // accumulator
         uint8_t x,y;        // x and y register
-        uint8_t sp;         //stack pointer
+        uint16_t sp{0x1FF};         //stack pointer
         uint8_t opcode;     //instruction opcode
         uint8_t status;     // status register
 
@@ -69,8 +69,8 @@ class cpu {
         ulong cycles;
 
         // //stack operations
-        // void push(uint8_t);
-        // uint8_t pull();
+        void push(uint8_t);
+        uint8_t pull();
 
         //cpu operations
         uint8_t fetch();
@@ -78,6 +78,12 @@ class cpu {
         void execute();
         void clock();
         
+        // branching instructions follow the same structure
+        // if condition is true:
+        //      branch
+
+        void branch();
+
         // instructions
         void ADC(); void AND(); void ASL(); void BCC(); 
         void BCS(); void BEQ(); void BIT(); void BMI(); 
