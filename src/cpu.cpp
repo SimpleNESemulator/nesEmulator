@@ -155,7 +155,35 @@ void cpu::CLV(){
 }
 void cpu::CMP(){
     // Compare memory with accumulator
-    // Affects Flags: N Z C 
+    // Affects Flags: N Z C
+
+    // Check if A and the operand are equal
+    uint diff = ac ^ *operand;
+    
+    // If A and the operand are equal then diff == 0
+    // If they are then Z is set
+    if (!diff)
+        status |= 0x20;
+
+    // Check if A is greater than the operand
+    // if the leftmost 1 bit of res1 is futher left than
+    // the leftmost 1 bit of res2 then ac is greater than the operand
+    uint res1 = (ac & ~(*operand));
+    uint res2 = (*operand & ~ac);
+
+    // shift res1 and res2 until one reaches 0
+    while(res1 != 0 && res2 != 0)
+    {
+        res1 << 1; 
+        res2 << 1;
+    }
+
+    // check which result reached 0 first and set N if res1 reached 0 first
+    // or set C if res2 reached 0 first
+    if(res1 == 0)
+        status |= 0x80; // set N
+    else
+        status |= 0x10; // Set C
 };
 void cpu::CPX(){};
 void cpu::CPY(){};
