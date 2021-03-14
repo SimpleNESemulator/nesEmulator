@@ -4,11 +4,15 @@
 #include <iostream>
 #include "mainMemory.hpp"
 
+// external symbols
+extern char opcodeStr[][4];     // opcode's string list declared external
+extern char addrModeStr[][5];   // addressing mode's string list declared external
+
 class cpu;
 typedef void (cpu::*instr_ptr) ();
 
 //Addressing modes
-enum addressingMode{
+enum addressingMode {
     XXX,    // illegal
     IMM,    // immediate
     ZPG,    // zeropage
@@ -25,6 +29,15 @@ enum addressingMode{
     ACC,    // accumulator
 };
 
+enum instrOpcodeEnum {
+    BRK, ORA, KIL, SLO, NOP, ASL, PHP, ANC, BPL, CLC, JSR, AND, RLA, 
+    BIT, ROL, PLP, BMI, SEC, RTI, EOR, SRE, LSR, PHA, ALR, JMP, BVC,
+    CLI, RTS, ADC, RRA, ROR, PLA, ARR, BVS, SEI, STA, SAX, STY, STX,
+    DEY, TXA, XAA, BCC, AHX, TYA, TXS, TAS, SHY, SHX, LDY, LDA, LDX,
+    LAX, TAY, TAX, BCS, CLV, TSX, LAS, CPY, CMP, DCP, DEC, INY, DEX,
+    AXS, BNE, CLD, CPX, SBC, ISC, INC, INX, BEQ, SED
+};
+
 enum flag{
     C = (1 << 0), // Carry
     Z = (1 << 1), // Zero
@@ -38,6 +51,7 @@ enum flag{
 
 typedef struct instruction {
     instr_ptr instr;
+    instrOpcodeEnum instrOpcode;
     addressingMode addressing;
     uint8_t size;
     uint8_t cycles;
@@ -54,6 +68,7 @@ class cpu {
         uint8_t status;     // status register
 
         instruction currentInstr;   // current instruction
+        uint16_t instrAddress; // current instruction address in memory
         uint8_t fetched;            // fetched byte from memory
 
         // operand is a pointer because some instructions
@@ -68,7 +83,7 @@ class cpu {
         uint16_t targetAddress;
         ulong cycles;
 
-        // //stack operations
+        // stack operations
         void push(uint8_t);
         uint8_t pull();
 

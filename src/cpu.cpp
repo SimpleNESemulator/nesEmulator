@@ -196,7 +196,21 @@ void cpu::INY(){};
 void cpu::INX(){};
 void cpu::JMP(){};
 void cpu::JSR(){};
-void cpu::LDA(){};
+void cpu::LDA(){
+    ac = *operand;
+
+    // modify Z flag
+    if(ac == 0)
+        status |= 0x40; // Set Z
+    else
+        status &= 0xBF; // Clear Z
+
+    //modify N flag
+    if(((ac & 0x80) >> 7) == 1)
+        status |= 0x1; // Set N
+    else
+        status &= 0xFE; // Clear N
+};
 void cpu::LDX(){};
 void cpu::LDY(){};
 void cpu::LSR(){};
@@ -259,80 +273,96 @@ void cpu::branch(){
         cycles++; // add one more cycle if the page boundary is crossed
 }
 
+
+// opcode string list defined here
+char opcodeStr[][4] = {
+    "BRK", "ORA", "KIL", "SLO", "NOP", "ASL", "PHP", "ANC", "BPL", "CLC", "JSR", "AND", "RLA", "BIT", "ROL", "PLP", "BMI", "SEC", "RTI", "EOR", "SRE", "LSR",
+    "PHA", "ALR", "JMP", "BVC", "CLI", "RTS", "ADC", "RRA", "ROR", "PLA", "ARR", "BVS", "SEI", "STA", "SAX", "STY", "STX", "DEY", "TXA", "XAA", "BCC", "AHX",
+    "TYA", "TXS", "TAS", "SHY", "SHX", "LDY", "LDA", "LDX", "LAX", "TAY", "TAX", "BCS", "CLV", "TSX", "LAS", "CPY", "CMP", "DCP", "DEC", "INY", "DEX", "AXS",
+    "BNE", "CLD", "CPX", "SBC", "ISC", "INC", "INX", "BEQ", "SED",
+};
+// addressing mode list defined here
+char addrModeStr[][5]{
+    "XXX", "IMM", "ZPG", "ZPGX", "ZPGY", "ABS", "ABSX", "ABSY", "IND", "XIND", "INDY", "REL", "IMPL", "ACC",
+};
+
 /*
     instruction is a struct that contains:
-    instr_ptr instr -> pointer to a member function of the cpu class (cpu::*ptr)
-    addressingMode addressing -> enum for different addressing modes
-    uint8_t size -> byte size of the instruction
-    uint8_t cycles -> amount of cycles the instruction takes the complete
-    uint8_t pageCycles -> amount of extra cycles to be added if the page boundary of the address is crossed
+
+    1. instr_ptr instr -> pointer to a member function of the cpu class (cpu::*ptr)
+    2. instrOpcodeEnum instrOpcode-> enum for indexing the opcode string
+    3. addressingMode addressing -> enum for different addressing modes
+    4. uint8_t size -> byte size of the instruction
+    5. uint8_t cycles -> amount of cycles the instruction takes the complete
+    6. uint8_t pageCycles -> amount of extra cycles to be added if the page boundary of the address is crossed
 */
 instruction instructions[] = {
-	{&cpu::BRK,IMPL,1,7,0},	{&cpu::ORA,XIND,2,6,0},	{&cpu::KIL,XXX,1,2,0},	{&cpu::SLO,XXX,2,8,0},
-	{&cpu::NOP,XXX,2,3,0},	{&cpu::ORA,ZPG,2,3,0},	{&cpu::ASL,ZPG,2,5,0},	{&cpu::SLO,XXX,2,5,0},
-	{&cpu::PHP,IMPL,1,3,0},	{&cpu::ORA,IMM,2,2,0},	{&cpu::ASL,ACC,1,2,0},	{&cpu::ANC,XXX,2,2,0},
-	{&cpu::NOP,XXX,3,4,0},	{&cpu::ORA,ABS,3,4,0},	{&cpu::ASL,ABS,3,6,0},	{&cpu::SLO,XXX,3,6,0},
-	{&cpu::BPL,REL,2,2,1},	{&cpu::ORA,INDY,2,5,1},	{&cpu::KIL,XXX,1,2,0},	{&cpu::SLO,XXX,2,8,0},
-	{&cpu::NOP,XXX,2,4,0},	{&cpu::ORA,ZPGX,2,4,0},	{&cpu::ASL,ZPGX,2,6,0},	{&cpu::SLO,XXX,2,6,0},
-	{&cpu::CLC,IMPL,1,2,0},	{&cpu::ORA,ABSY,3,4,1},	{&cpu::NOP,XXX,1,2,0},	{&cpu::SLO,XXX,3,7,0},
-	{&cpu::NOP,XXX,3,4,1},	{&cpu::ORA,ABSX,3,4,1},	{&cpu::ASL,ABSX,3,7,0},	{&cpu::SLO,XXX,3,7,0},
-	{&cpu::JSR,ABS,3,6,0},	{&cpu::AND,XIND,2,6,0},	{&cpu::KIL,XXX,1,2,0},	{&cpu::RLA,XXX,2,8,0},
-	{&cpu::BIT,ZPG,2,3,0},	{&cpu::AND,ZPG,2,3,0},	{&cpu::ROL,ZPG,2,5,0},	{&cpu::RLA,XXX,2,5,0},
-	{&cpu::PLP,IMPL,1,4,0},	{&cpu::AND,IMM,2,2,0},	{&cpu::ROL,ACC,1,2,0},	{&cpu::ANC,XXX,2,2,0},
-	{&cpu::BIT,ABS,3,4,0},	{&cpu::AND,ABS,3,4,0},	{&cpu::ROL,ABS,3,6,0},	{&cpu::RLA,XXX,3,6,0},
-	{&cpu::BMI,REL,2,2,1},	{&cpu::AND,INDY,2,5,1},	{&cpu::KIL,XXX,1,2,0},	{&cpu::RLA,XXX,2,8,0},
-	{&cpu::NOP,XXX,2,4,0},	{&cpu::AND,ZPGX,2,4,0},	{&cpu::ROL,ZPGX,2,6,0},	{&cpu::RLA,XXX,2,6,0},
-	{&cpu::SEC,IMPL,1,2,0},	{&cpu::AND,ABSY,3,4,1},	{&cpu::NOP,XXX,1,2,0},	{&cpu::RLA,XXX,3,7,0},
-	{&cpu::NOP,XXX,3,4,1},	{&cpu::AND,ABSX,3,4,1},	{&cpu::ROL,ABSX,3,7,0},	{&cpu::RLA,XXX,3,7,0},
-	{&cpu::RTI,IMPL,1,6,0},	{&cpu::EOR,XIND,2,6,0},	{&cpu::KIL,XXX,1,2,0},	{&cpu::SRE,XXX,2,8,0},
-	{&cpu::NOP,XXX,2,3,0},	{&cpu::EOR,ZPG,2,3,0},	{&cpu::LSR,ZPG,2,5,0},	{&cpu::SRE,XXX,2,5,0},
-	{&cpu::PHA,IMPL,1,3,0},	{&cpu::EOR,IMM,2,2,0},	{&cpu::LSR,ACC,1,2,0},	{&cpu::ALR,XXX,2,2,0},
-	{&cpu::JMP,ABS,3,3,0},	{&cpu::EOR,ABS,3,4,0},	{&cpu::LSR,ABS,3,6,0},	{&cpu::SRE,XXX,3,6,0},
-	{&cpu::BVC,REL,2,2,1},	{&cpu::EOR,INDY,2,5,1},	{&cpu::KIL,XXX,1,2,0},	{&cpu::SRE,XXX,2,8,0},
-	{&cpu::NOP,XXX,2,4,0},	{&cpu::EOR,ZPGX,2,4,0},	{&cpu::LSR,ZPGX,2,6,0},	{&cpu::SRE,XXX,2,6,0},
-	{&cpu::CLI,IMPL,1,2,0},	{&cpu::EOR,ABSY,3,4,1},	{&cpu::NOP,XXX,1,2,0},	{&cpu::SRE,XXX,3,7,0},
-	{&cpu::NOP,XXX,3,4,1},	{&cpu::EOR,ABSX,3,4,1},	{&cpu::LSR,ABSX,3,7,0},	{&cpu::SRE,XXX,3,7,0},
-	{&cpu::RTS,IMPL,1,6,0},	{&cpu::ADC,XIND,2,6,0},	{&cpu::KIL,XXX,1,2,0},	{&cpu::RRA,XXX,2,8,0},
-	{&cpu::NOP,XXX,2,3,0},	{&cpu::ADC,ZPG,2,3,0},	{&cpu::ROR,ZPG,2,5,0},	{&cpu::RRA,XXX,2,5,0},
-	{&cpu::PLA,IMPL,1,4,0},	{&cpu::ADC,IMM,2,2,0},	{&cpu::ROR,ACC,1,2,0},	{&cpu::ARR,XXX,2,2,0},
-	{&cpu::JMP,IND,3,5,0},	{&cpu::ADC,ABS,3,4,0},	{&cpu::ROR,ABS,3,6,0},	{&cpu::RRA,XXX,3,6,0},
-	{&cpu::BVS,REL,2,2,1},	{&cpu::ADC,INDY,2,5,1},	{&cpu::KIL,XXX,1,2,0},	{&cpu::RRA,XXX,2,8,0},
-	{&cpu::NOP,XXX,2,4,0},	{&cpu::ADC,ZPGX,2,4,0},	{&cpu::ROR,ZPGX,2,6,0},	{&cpu::RRA,XXX,2,6,0},
-	{&cpu::SEI,IMPL,1,2,0},	{&cpu::ADC,ABSY,3,4,1},	{&cpu::NOP,XXX,1,2,0},	{&cpu::RRA,XXX,3,7,0},
-	{&cpu::NOP,XXX,3,4,1},	{&cpu::ADC,ABSX,3,4,1},	{&cpu::ROR,ABSX,3,7,0},	{&cpu::RRA,XXX,3,7,0},
-	{&cpu::NOP,XXX,2,2,0},	{&cpu::STA,XIND,2,6,0},	{&cpu::NOP,XXX,2,2,0},	{&cpu::SAX,XXX,2,6,0},
-	{&cpu::STY,ZPG,2,3,0},	{&cpu::STA,ZPG,2,3,0},	{&cpu::STX,ZPG,2,3,0},	{&cpu::SAX,XXX,2,3,0},
-	{&cpu::DEY,IMPL,1,2,0},	{&cpu::NOP,XXX,2,2,0},	{&cpu::TXA,IMPL,1,2,0},	{&cpu::XAA,XXX,2,2,0},
-	{&cpu::STY,ABS,3,4,0},	{&cpu::STA,ABS,3,4,0},	{&cpu::STX,ABS,3,4,0},	{&cpu::SAX,XXX,3,4,0},
-	{&cpu::BCC,REL,2,2,1},	{&cpu::STA,INDY,2,6,0},	{&cpu::KIL,XXX,1,2,0},	{&cpu::AHX,XXX,2,6,0},
-	{&cpu::STY,ZPGX,2,4,0},	{&cpu::STA,ZPGX,2,4,0},	{&cpu::STX,ZPGY,2,4,0},	{&cpu::SAX,XXX,2,4,0},
-	{&cpu::TYA,IMPL,1,2,0},	{&cpu::STA,ABSY,3,5,0},	{&cpu::TXS,IMPL,1,2,0},	{&cpu::TAS,XXX,3,5,0},
-	{&cpu::SHY,XXX,3,5,0},	{&cpu::STA,ABSX,3,5,0},	{&cpu::SHX,XXX,3,5,0},	{&cpu::AHX,XXX,3,5,0},
-	{&cpu::LDY,IMM,2,2,0},	{&cpu::LDA,XIND,2,6,0},	{&cpu::LDX,IMM,2,2,0},	{&cpu::LAX,XXX,2,6,0},
-	{&cpu::LDY,ZPG,2,3,0},	{&cpu::LDA,ZPG,2,3,0},	{&cpu::LDX,ZPG,2,3,0},	{&cpu::LAX,XXX,2,3,0},
-	{&cpu::TAY,IMPL,1,2,0},	{&cpu::LDA,IMM,2,2,0},	{&cpu::TAX,IMPL,1,2,0},	{&cpu::LAX,XXX,2,2,0},
-	{&cpu::LDY,ABS,3,4,0},	{&cpu::LDA,ABS,3,4,0},	{&cpu::LDX,ABS,3,4,0},	{&cpu::LAX,XXX,3,4,0},
-	{&cpu::BCS,REL,2,2,1},	{&cpu::LDA,INDY,2,5,1},	{&cpu::KIL,XXX,1,2,0},	{&cpu::LAX,XXX,2,5,1},
-	{&cpu::LDY,ZPGX,2,4,0},	{&cpu::LDA,ZPGX,2,4,0},	{&cpu::LDX,ZPGY,2,4,0},	{&cpu::LAX,XXX,2,4,0},
-	{&cpu::CLV,IMPL,1,2,0},	{&cpu::LDA,ABSY,3,4,1},	{&cpu::TSX,IMPL,1,2,0},	{&cpu::LAS,XXX,3,4,1},
-	{&cpu::LDY,ABSX,3,4,1},	{&cpu::LDA,ABSX,3,4,1},	{&cpu::LDX,ABSY,3,4,1},	{&cpu::LAX,XXX,3,4,1},
-	{&cpu::CPY,IMM,2,2,0},	{&cpu::CMP,XIND,2,6,0},	{&cpu::NOP,XXX,2,2,0},	{&cpu::DCP,XXX,2,8,0},
-	{&cpu::CPY,ZPG,2,3,0},	{&cpu::CMP,ZPG,2,3,0},	{&cpu::DEC,ZPG,2,5,0},	{&cpu::DCP,XXX,2,5,0},
-	{&cpu::INY,IMPL,1,2,0},	{&cpu::CMP,IMM,2,2,0},	{&cpu::DEX,IMPL,1,2,0},	{&cpu::AXS,XXX,2,2,0},
-	{&cpu::CPY,ABS,3,4,0},	{&cpu::CMP,ABS,3,4,0},	{&cpu::DEC,ABS,3,6,0},	{&cpu::DCP,XXX,3,6,0},
-	{&cpu::BNE,REL,2,2,1},	{&cpu::CMP,INDY,2,5,1},	{&cpu::KIL,XXX,1,2,0},	{&cpu::DCP,XXX,2,8,0},
-	{&cpu::NOP,XXX,2,4,0},	{&cpu::CMP,ZPGX,2,4,0},	{&cpu::DEC,ZPGX,2,6,0},	{&cpu::DCP,XXX,2,6,0},
-	{&cpu::CLD,IMPL,1,2,0},	{&cpu::CMP,ABSY,3,4,1},	{&cpu::NOP,XXX,1,2,0},	{&cpu::DCP,XXX,3,7,0},
-	{&cpu::NOP,XXX,3,4,1},	{&cpu::CMP,ABSX,3,4,1},	{&cpu::DEC,ABSX,3,7,0},	{&cpu::DCP,XXX,3,7,0},
-	{&cpu::CPX,IMM,2,2,0},	{&cpu::SBC,XIND,2,6,0},	{&cpu::NOP,XXX,2,2,0},	{&cpu::ISC,XXX,2,8,0},
-	{&cpu::CPX,ZPG,2,3,0},	{&cpu::SBC,ZPG,2,3,0},	{&cpu::INC,ZPG,2,5,0},	{&cpu::ISC,XXX,2,5,0},
-	{&cpu::INX,IMPL,1,2,0},	{&cpu::SBC,IMM,2,2,0},	{&cpu::NOP,IMPL,1,2,0},	{&cpu::SBC,XXX,2,2,0},
-	{&cpu::CPX,ABS,3,4,0},	{&cpu::SBC,ABS,3,4,0},	{&cpu::INC,ABS,3,6,0},	{&cpu::ISC,XXX,3,6,0},
-	{&cpu::BEQ,REL,2,2,1},	{&cpu::SBC,INDY,2,5,1},	{&cpu::KIL,XXX,1,2,0},	{&cpu::ISC,XXX,2,8,0},
-	{&cpu::NOP,XXX,2,4,0},	{&cpu::SBC,ZPGX,2,4,0},	{&cpu::INC,ZPGX,2,6,0},	{&cpu::ISC,XXX,2,6,0},
-	{&cpu::SED,IMPL,1,2,0},	{&cpu::SBC,ABSY,3,4,1},	{&cpu::NOP,XXX,1,2,0},	{&cpu::ISC,XXX,3,7,0},
-	{&cpu::NOP,XXX,3,4,1},	{&cpu::SBC,ABSX,3,4,1},	{&cpu::INC,ABSX,3,7,0},	{&cpu::ISC,XXX,3,7,0},
+	{&cpu::BRK,BRK,IMPL,1,7,0},	{&cpu::ORA,ORA,XIND,2,6,0},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::SLO,SLO,XXX,2,8,0},
+	{&cpu::NOP,NOP,XXX,2,3,0},	{&cpu::ORA,ORA,ZPG,2,3,0},	{&cpu::ASL,ASL,ZPG,2,5,0},	{&cpu::SLO,SLO,XXX,2,5,0},
+	{&cpu::PHP,PHP,IMPL,1,3,0},	{&cpu::ORA,ORA,IMM,2,2,0},	{&cpu::ASL,ASL,ACC,1,2,0},	{&cpu::ANC,ANC,XXX,2,2,0},
+	{&cpu::NOP,NOP,XXX,3,4,0},	{&cpu::ORA,ORA,ABS,3,4,0},	{&cpu::ASL,ASL,ABS,3,6,0},	{&cpu::SLO,SLO,XXX,3,6,0},
+	{&cpu::BPL,BPL,REL,2,2,1},	{&cpu::ORA,ORA,INDY,2,5,1},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::SLO,SLO,XXX,2,8,0},
+	{&cpu::NOP,NOP,XXX,2,4,0},	{&cpu::ORA,ORA,ZPGX,2,4,0},	{&cpu::ASL,ASL,ZPGX,2,6,0},	{&cpu::SLO,SLO,XXX,2,6,0},
+	{&cpu::CLC,CLC,IMPL,1,2,0},	{&cpu::ORA,ORA,ABSY,3,4,1},	{&cpu::NOP,NOP,XXX,1,2,0},	{&cpu::SLO,SLO,XXX,3,7,0},
+	{&cpu::NOP,NOP,XXX,3,4,1},	{&cpu::ORA,ORA,ABSX,3,4,1},	{&cpu::ASL,ASL,ABSX,3,7,0},	{&cpu::SLO,SLO,XXX,3,7,0},
+	{&cpu::JSR,JSR,ABS,3,6,0},	{&cpu::AND,AND,XIND,2,6,0},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::RLA,RLA,XXX,2,8,0},
+	{&cpu::BIT,BIT,ZPG,2,3,0},	{&cpu::AND,AND,ZPG,2,3,0},	{&cpu::ROL,ROL,ZPG,2,5,0},	{&cpu::RLA,RLA,XXX,2,5,0},
+	{&cpu::PLP,PLP,IMPL,1,4,0},	{&cpu::AND,AND,IMM,2,2,0},	{&cpu::ROL,ROL,ACC,1,2,0},	{&cpu::ANC,ANC,XXX,2,2,0},
+	{&cpu::BIT,BIT,ABS,3,4,0},	{&cpu::AND,AND,ABS,3,4,0},	{&cpu::ROL,ROL,ABS,3,6,0},	{&cpu::RLA,RLA,XXX,3,6,0},
+	{&cpu::BMI,BMI,REL,2,2,1},	{&cpu::AND,AND,INDY,2,5,1},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::RLA,RLA,XXX,2,8,0},
+	{&cpu::NOP,NOP,XXX,2,4,0},	{&cpu::AND,AND,ZPGX,2,4,0},	{&cpu::ROL,ROL,ZPGX,2,6,0},	{&cpu::RLA,RLA,XXX,2,6,0},
+	{&cpu::SEC,SEC,IMPL,1,2,0},	{&cpu::AND,AND,ABSY,3,4,1},	{&cpu::NOP,NOP,XXX,1,2,0},	{&cpu::RLA,RLA,XXX,3,7,0},
+	{&cpu::NOP,NOP,XXX,3,4,1},	{&cpu::AND,AND,ABSX,3,4,1},	{&cpu::ROL,ROL,ABSX,3,7,0},	{&cpu::RLA,RLA,XXX,3,7,0},
+	{&cpu::RTI,RTI,IMPL,1,6,0},	{&cpu::EOR,EOR,XIND,2,6,0},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::SRE,SRE,XXX,2,8,0},
+	{&cpu::NOP,NOP,XXX,2,3,0},	{&cpu::EOR,EOR,ZPG,2,3,0},	{&cpu::LSR,LSR,ZPG,2,5,0},	{&cpu::SRE,SRE,XXX,2,5,0},
+	{&cpu::PHA,PHA,IMPL,1,3,0},	{&cpu::EOR,EOR,IMM,2,2,0},	{&cpu::LSR,LSR,ACC,1,2,0},	{&cpu::ALR,ALR,XXX,2,2,0},
+	{&cpu::JMP,JMP,ABS,3,3,0},	{&cpu::EOR,EOR,ABS,3,4,0},	{&cpu::LSR,LSR,ABS,3,6,0},	{&cpu::SRE,SRE,XXX,3,6,0},
+	{&cpu::BVC,BVC,REL,2,2,1},	{&cpu::EOR,EOR,INDY,2,5,1},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::SRE,SRE,XXX,2,8,0},
+	{&cpu::NOP,NOP,XXX,2,4,0},	{&cpu::EOR,EOR,ZPGX,2,4,0},	{&cpu::LSR,LSR,ZPGX,2,6,0},	{&cpu::SRE,SRE,XXX,2,6,0},
+	{&cpu::CLI,CLI,IMPL,1,2,0},	{&cpu::EOR,EOR,ABSY,3,4,1},	{&cpu::NOP,NOP,XXX,1,2,0},	{&cpu::SRE,SRE,XXX,3,7,0},
+	{&cpu::NOP,NOP,XXX,3,4,1},	{&cpu::EOR,EOR,ABSX,3,4,1},	{&cpu::LSR,LSR,ABSX,3,7,0},	{&cpu::SRE,SRE,XXX,3,7,0},
+	{&cpu::RTS,RTS,IMPL,1,6,0},	{&cpu::ADC,ADC,XIND,2,6,0},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::RRA,RRA,XXX,2,8,0},
+	{&cpu::NOP,NOP,XXX,2,3,0},	{&cpu::ADC,ADC,ZPG,2,3,0},	{&cpu::ROR,ROR,ZPG,2,5,0},	{&cpu::RRA,RRA,XXX,2,5,0},
+	{&cpu::PLA,PLA,IMPL,1,4,0},	{&cpu::ADC,ADC,IMM,2,2,0},	{&cpu::ROR,ROR,ACC,1,2,0},	{&cpu::ARR,ARR,XXX,2,2,0},
+	{&cpu::JMP,JMP,IND,3,5,0},	{&cpu::ADC,ADC,ABS,3,4,0},	{&cpu::ROR,ROR,ABS,3,6,0},	{&cpu::RRA,RRA,XXX,3,6,0},
+	{&cpu::BVS,BVS,REL,2,2,1},	{&cpu::ADC,ADC,INDY,2,5,1},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::RRA,RRA,XXX,2,8,0},
+	{&cpu::NOP,NOP,XXX,2,4,0},	{&cpu::ADC,ADC,ZPGX,2,4,0},	{&cpu::ROR,ROR,ZPGX,2,6,0},	{&cpu::RRA,RRA,XXX,2,6,0},
+	{&cpu::SEI,SEI,IMPL,1,2,0},	{&cpu::ADC,ADC,ABSY,3,4,1},	{&cpu::NOP,NOP,XXX,1,2,0},	{&cpu::RRA,RRA,XXX,3,7,0},
+	{&cpu::NOP,NOP,XXX,3,4,1},	{&cpu::ADC,ADC,ABSX,3,4,1},	{&cpu::ROR,ROR,ABSX,3,7,0},	{&cpu::RRA,RRA,XXX,3,7,0},
+	{&cpu::NOP,NOP,XXX,2,2,0},	{&cpu::STA,STA,XIND,2,6,0},	{&cpu::NOP,NOP,XXX,2,2,0},	{&cpu::SAX,SAX,XXX,2,6,0},
+	{&cpu::STY,STY,ZPG,2,3,0},	{&cpu::STA,STA,ZPG,2,3,0},	{&cpu::STX,STX,ZPG,2,3,0},	{&cpu::SAX,SAX,XXX,2,3,0},
+	{&cpu::DEY,DEY,IMPL,1,2,0},	{&cpu::NOP,NOP,XXX,2,2,0},	{&cpu::TXA,TXA,IMPL,1,2,0},	{&cpu::XAA,XAA,XXX,2,2,0},
+	{&cpu::STY,STY,ABS,3,4,0},	{&cpu::STA,STA,ABS,3,4,0},	{&cpu::STX,STX,ABS,3,4,0},	{&cpu::SAX,SAX,XXX,3,4,0},
+	{&cpu::BCC,BCC,REL,2,2,1},	{&cpu::STA,STA,INDY,2,6,0},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::AHX,AHX,XXX,2,6,0},
+	{&cpu::STY,STY,ZPGX,2,4,0},	{&cpu::STA,STA,ZPGX,2,4,0},	{&cpu::STX,STX,ZPGY,2,4,0},	{&cpu::SAX,SAX,XXX,2,4,0},
+	{&cpu::TYA,TYA,IMPL,1,2,0},	{&cpu::STA,STA,ABSY,3,5,0},	{&cpu::TXS,TXS,IMPL,1,2,0},	{&cpu::TAS,TAS,XXX,3,5,0},
+	{&cpu::SHY,SHY,XXX,3,5,0},	{&cpu::STA,STA,ABSX,3,5,0},	{&cpu::SHX,SHX,XXX,3,5,0},	{&cpu::AHX,AHX,XXX,3,5,0},
+	{&cpu::LDY,LDY,IMM,2,2,0},	{&cpu::LDA,LDA,XIND,2,6,0},	{&cpu::LDX,LDX,IMM,2,2,0},	{&cpu::LAX,LAX,XXX,2,6,0},
+	{&cpu::LDY,LDY,ZPG,2,3,0},	{&cpu::LDA,LDA,ZPG,2,3,0},	{&cpu::LDX,LDX,ZPG,2,3,0},	{&cpu::LAX,LAX,XXX,2,3,0},
+	{&cpu::TAY,TAY,IMPL,1,2,0},	{&cpu::LDA,LDA,IMM,2,2,0},	{&cpu::TAX,TAX,IMPL,1,2,0},	{&cpu::LAX,LAX,XXX,2,2,0},
+	{&cpu::LDY,LDY,ABS,3,4,0},	{&cpu::LDA,LDA,ABS,3,4,0},	{&cpu::LDX,LDX,ABS,3,4,0},	{&cpu::LAX,LAX,XXX,3,4,0},
+	{&cpu::BCS,BCS,REL,2,2,1},	{&cpu::LDA,LDA,INDY,2,5,1},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::LAX,LAX,XXX,2,5,1},
+	{&cpu::LDY,LDY,ZPGX,2,4,0},	{&cpu::LDA,LDA,ZPGX,2,4,0},	{&cpu::LDX,LDX,ZPGY,2,4,0},	{&cpu::LAX,LAX,XXX,2,4,0},
+	{&cpu::CLV,CLV,IMPL,1,2,0},	{&cpu::LDA,LDA,ABSY,3,4,1},	{&cpu::TSX,TSX,IMPL,1,2,0},	{&cpu::LAS,LAS,XXX,3,4,1},
+	{&cpu::LDY,LDY,ABSX,3,4,1},	{&cpu::LDA,LDA,ABSX,3,4,1},	{&cpu::LDX,LDX,ABSY,3,4,1},	{&cpu::LAX,LAX,XXX,3,4,1},
+	{&cpu::CPY,CPY,IMM,2,2,0},	{&cpu::CMP,CMP,XIND,2,6,0},	{&cpu::NOP,NOP,XXX,2,2,0},	{&cpu::DCP,DCP,XXX,2,8,0},
+	{&cpu::CPY,CPY,ZPG,2,3,0},	{&cpu::CMP,CMP,ZPG,2,3,0},	{&cpu::DEC,DEC,ZPG,2,5,0},	{&cpu::DCP,DCP,XXX,2,5,0},
+	{&cpu::INY,INY,IMPL,1,2,0},	{&cpu::CMP,CMP,IMM,2,2,0},	{&cpu::DEX,DEX,IMPL,1,2,0},	{&cpu::AXS,AXS,XXX,2,2,0},
+	{&cpu::CPY,CPY,ABS,3,4,0},	{&cpu::CMP,CMP,ABS,3,4,0},	{&cpu::DEC,DEC,ABS,3,6,0},	{&cpu::DCP,DCP,XXX,3,6,0},
+	{&cpu::BNE,BNE,REL,2,2,1},	{&cpu::CMP,CMP,INDY,2,5,1},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::DCP,DCP,XXX,2,8,0},
+	{&cpu::NOP,NOP,XXX,2,4,0},	{&cpu::CMP,CMP,ZPGX,2,4,0},	{&cpu::DEC,DEC,ZPGX,2,6,0},	{&cpu::DCP,DCP,XXX,2,6,0},
+	{&cpu::CLD,CLD,IMPL,1,2,0},	{&cpu::CMP,CMP,ABSY,3,4,1},	{&cpu::NOP,NOP,XXX,1,2,0},	{&cpu::DCP,DCP,XXX,3,7,0},
+	{&cpu::NOP,NOP,XXX,3,4,1},	{&cpu::CMP,CMP,ABSX,3,4,1},	{&cpu::DEC,DEC,ABSX,3,7,0},	{&cpu::DCP,DCP,XXX,3,7,0},
+	{&cpu::CPX,CPX,IMM,2,2,0},	{&cpu::SBC,SBC,XIND,2,6,0},	{&cpu::NOP,NOP,XXX,2,2,0},	{&cpu::ISC,ISC,XXX,2,8,0},
+	{&cpu::CPX,CPX,ZPG,2,3,0},	{&cpu::SBC,SBC,ZPG,2,3,0},	{&cpu::INC,INC,ZPG,2,5,0},	{&cpu::ISC,ISC,XXX,2,5,0},
+	{&cpu::INX,INX,IMPL,1,2,0},	{&cpu::SBC,SBC,IMM,2,2,0},	{&cpu::NOP,NOP,IMPL,1,2,0},	{&cpu::SBC,SBC,XXX,2,2,0},
+	{&cpu::CPX,CPX,ABS,3,4,0},	{&cpu::SBC,SBC,ABS,3,4,0},	{&cpu::INC,INC,ABS,3,6,0},	{&cpu::ISC,ISC,XXX,3,6,0},
+	{&cpu::BEQ,BEQ,REL,2,2,1},	{&cpu::SBC,SBC,INDY,2,5,1},	{&cpu::KIL,KIL,XXX,1,2,0},	{&cpu::ISC,ISC,XXX,2,8,0},
+	{&cpu::NOP,NOP,XXX,2,4,0},	{&cpu::SBC,SBC,ZPGX,2,4,0},	{&cpu::INC,INC,ZPGX,2,6,0},	{&cpu::ISC,ISC,XXX,2,6,0},
+	{&cpu::SED,SED,IMPL,1,2,0},	{&cpu::SBC,SBC,ABSY,3,4,1},	{&cpu::NOP,NOP,XXX,1,2,0},	{&cpu::ISC,ISC,XXX,3,7,0},
+	{&cpu::NOP,NOP,XXX,3,4,1},	{&cpu::SBC,SBC,ABSX,3,4,1},	{&cpu::INC,INC,ABSX,3,7,0},	{&cpu::ISC,ISC,XXX,3,7,0},
 };
+
 
 // stack operations
 // 6502 uses the second page in memory for stack
@@ -362,6 +392,10 @@ void cpu::decode(){
     // once we have fetched we can assign our current instruction
     // we assign it to our currentInstr
     currentInstr = instructions[fetched];
+    
+    // address of the current instruction
+    instrAddress = pc - 1;
+
     cycles = currentInstr.cycles;
     
     uint8_t lo, hi;     // memory for low and high bytes
