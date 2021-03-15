@@ -25,7 +25,7 @@ int main(){
     for (uint16_t i = 0; i < ((sizeof program) / (sizeof *program)); i++)
         memWrite(i, program[i]);
 
-    cout << "===============================================CZIDBSVN===========" << endl;
+    cout << "===============================================NVSBDIZC===========" << endl;
 
     for (size_t i = 0; i < 20; i++){
         c.status &= 0;
